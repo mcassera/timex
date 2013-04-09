@@ -1,0 +1,211 @@
+#!/bin/bash 
+#
+# 4/7/2013 Michael Cassera
+#
+# A BASH script to compress and combine GoPro video files for Time Lapse
+#
+# Default values are:		Date is new directory
+#							Final File is Date+Rate.mp4
+#							Rate is 24x normal speed
+#							The Video is NOT uploaded to YouTube
+#	
+# Usage    timex [-nrsyh]	
+#
+# Tools needed to run this script:	ffmpeg
+#									mjpegtools
+#									mplayer
+#									youtube-upload
+
+#Default Values
+ytUser=username					# YouTube Username
+ytPass=password					# YouTube Password
+read dt <<< "`date -I`"			# Get date in -I format for File Name
+rate="24"						# Video/Audio multiplier
+YT=n							# upload to YouTube	
+Sound=1							# Compress sound default (yes)
+
+# Functions to do the heavy lifting.  File is passed as ${1} to ffmpeg.
+# Fuction Rip video from file and compress
+function vidCompress()
+{		
+	echo "   Ripping video & compressing." >>timex.log
+	ffmpeg -i ${1} -f yuv4mpegpipe - | yuvfps -s $fps:1 -r 30:1  | ffmpeg -f yuv4mpegpipe -i - -b 28800k -y fast.mp4
+}
+
+# Function Rip audio from file and compress
+function audioCompress()
+{
+	echo "   Ripping audio & compressing." >>timex.log
+	ffmpeg -i ${1} -vn -ac 2 -ar 44100 -ab 128k -f mp3 sound.mp3
+	mplayer -af scaletempo -speed $rate sound.mp3 -vc null -vo null -ao pcm:fast:waveheader:file=sound.wav
+	rm -fv sound.mp3
+	ffmpeg -i sound.wav -acodec libmp3lame -ab 128k sound.mp3
+	rm -fv sound.wav
+}
+
+# Function Attach compressed audio to compressed viedo
+function audio2video()
+{
+	echo "   Re-attaching audio to video." >>timex.log
+	ffmpeg -i fast.mp4 -i sound.mp3 -shortest -vcodec copy -acodec copy fastA.mp4
+	rm -fv sound.mp3
+	rm -fv fast.mp4
+}
+
+# Function rerender to mpeg to append to working file
+function render2mpg()
+{
+	echo "   Rendering to mpeg." >>timex.log
+	ffmpeg -i fastA.mp4 -b 28800k temp.mpg
+	rm -fv fastA.mp4
+}
+
+# Function Append new compressed file to working file
+function add2work()
+{
+	echo "   Adding to work.mpg." >>timex.log
+	cat work.mpg temp.mpg > temp2.mpg
+	rm -fv work.mpg
+	rm -fv temp.mpg
+	mv temp2.mpg work.mpg
+}
+
+# Function for usage
+function usage {
+	echo
+	echo "Usage: timex -n [name] -r [rate] -s -y -h"
+	echo
+	echo "	-n	New name for file, default is the date + rate"
+	echo "	-r	Rate to speed up video, default is 24"
+	echo "	-s	silent - do not include audio"
+	echo "	-y	Upload to Youtube"
+	echo "		Program will ask for name, description, user and password"
+	echo "	-h	This help message"
+	echo
+	echo "	Tools needed to run this script:"	
+	echo "			ffmpeg	(Video I/O)"
+	echo "			mjpegtools  (Video Compression)"
+	echo "			mplayer	 (Audio Compression)"
+	echo "			youtube-upload  (Command Line upload to Youtube)"
+	echo 
+}
+
+
+#  Program Starts here.
+#  Check parameters
+while getopts n:r:syh option
+do
+	case $option in
+	n)
+		dt=$OPTARG
+		;;		
+	r)
+		rate=$OPTARG
+		;;		
+	s)
+		Sound=0 	# Do not compress sound
+		;;			
+	y)
+		YT=y
+		;;		
+	h)
+		usage
+		exit 0;;		
+	*)				# Any other option is an error
+		usage
+		exit 1;;		
+	esac
+done
+
+
+#  Start Log File
+echo "timex log file" > timex.log
+echo >>timex.log
+
+#  Run a directory listing and store in an array.  The listing is sorted by modified date.
+echo "File List:" >>timex.log
+echo "File List:"
+while read line
+do
+	fname=("${fname[@]}" $line)
+	echo $line >>timex.log
+	echo $line
+done <<< "`ls -1dtr *.MP4`"
+echo
+echo >>timex.log	
+
+#  Calculate rate for ffmpeg 
+fps=$[$rate*30]
+echo "Rate is "$rate"X, "$fps" frame/sec."
+echo "Rate is "$rate"X, "$fps" frame/sec." >>timex.log
+echo
+
+#  Get Youtube info if uploading to Youtube
+if [ $YT = "y" ] || [ $YT = "Y" ]
+then
+	echo -n 'Enter the title of the Video>  '
+	read YTTitle					#The Title
+	echo -n 'Enter a short description of the Video> '
+	read YTDescription				#The Description
+	echo "Will upload to YouTube with the title: "$YTTitle >>timex.log
+	echo >>timex.log
+	echo -n 'Enter YouTube username> '
+	read ytUser
+	echo -n 'Enter YouTube password> '
+	read -s ytPass
+else
+	echo "Not uploading to YouTube" >>timex.log
+	echo >>timex.log
+fi
+
+
+#  Create name of final video name
+fn=$dt-$rate.mp4					
+echo "Final Video name is: "$fn >>timex.log
+echo >>timex.log
+
+
+#  Run a loop to pass file names to time lapse function	
+i="0"								# The Counter
+x=${#fname[@]}						# Number of elements in the array
+while [ $i -lt $x ]
+do
+	date >>timex.log				# Time Stamp log file
+	echo " Working on "${fname[$i]}"." >>timex.log
+	vidCompress ${fname[$i]}		# rip & compress Video
+	if [ $Sound = "1" ]
+	then
+		audioCompress ${fname[$i]}	# rip & compress Audio
+		audio2video					# combine audio to video
+	else
+		mv fast.mp4 fastA.mp4		# skip audio compression, just rename
+	fi
+	render2mpg						# render to mpg
+	add2work						# append to work.mpg
+	i=$[$i+1]						# next file
+	echo >>timex.log
+done	
+
+
+#  Finish up by turning work.mpg to mp4 with date & rate in name. Remove work file.	
+date >>timex.log
+echo "   Rendering final video to mpeg-4." >>timex.log
+echo >>timex.log
+ffmpeg -i work.mpg -b 28800k $fn
+rm -fv work.mpg
+
+
+#  Upload to YouTube if YT is set to Y or y
+if [ $YT = "y" ] || [ $YT = "Y" ]
+then
+	date >>timex.log
+	echo "   Uploading "$YTTitle" to YouTube" >>timex.log
+	echo >>timex.log
+	youtube-upload --email $ytUser --password=$ytPass --title="$YTTitle" --description="$YTDescription" --category="Sports" $fn 
+fi
+
+#  We are done!
+date >>timex.log
+echo "   Done!" >>timex.log
+
+
