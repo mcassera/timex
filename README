@@ -1,1 +1,8 @@
 BASH Script to Time Lapse GoPro videos with Audio included.
+
+Script is installed in /usr/local/bin
+Files to be worked on should be in their own directory. cd into that
+directory and run this command to manipulate files.
+
+GoPro uses caps so the script is looking for .MP4 as opposed to .mp4
+when building a list of files.

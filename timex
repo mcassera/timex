@@ -1,7 +1,8 @@
 #!/bin/bash 
 #
+# 4/9/2013 Added function to work without mjpegtools.
 # 4/7/2013 Michael Cassera
-#
+
 # A BASH script to compress and combine GoPro video files for Time Lapse
 #
 # Default values are:		Date is new directory
@@ -12,9 +13,9 @@
 # Usage    timex [-nrsyh]	
 #
 # Tools needed to run this script:	ffmpeg
-#									mjpegtools
 #									mplayer
-#									youtube-upload
+#									mjpegtools [optional]
+#									youtube-upload [optional]
 
 #Default Values
 ytUser=username					# YouTube Username
@@ -23,13 +24,25 @@ read dt <<< "`date -I`"			# Get date in -I format for File Name
 rate="24"						# Video/Audio multiplier
 YT=n							# upload to YouTube	
 Sound=1							# Compress sound default (yes)
+mjpeg=0							# Don't use mjpeg tools
 
 # Functions to do the heavy lifting.  File is passed as ${1} to ffmpeg.
 # Fuction Rip video from file and compress
-function vidCompress()
+function vidCompress()			# Use ffmpeg & mjpegtools to compress Video (Faster)
 {		
 	echo "   Ripping video & compressing." >>timex.log
 	ffmpeg -i ${1} -f yuv4mpegpipe - | yuvfps -s $fps:1 -r 30:1  | ffmpeg -f yuv4mpegpipe -i - -b 28800k -y fast.mp4
+}
+
+function videoRipCompress()		# Use ffmpeg to compress Video (Slower)
+{
+	mkdir tmp
+	echo "   Ripping video to frames in tmp." >>timex.log
+	ffmpeg -i ${1} -f image2 tmp/frame%7d.jpg
+	echo "   Rebuilding mp4 from frames." >>timex.log
+	ffmpeg -f image2 -r $fps -i tmp/frame%7d.jpg -s hd720 -b 57600k -y fast.mp4
+	echo "   Clearing tmp directory." >>timex.log
+	rm -rfv tmp
 }
 
 # Function Rip audio from file and compress
@@ -77,6 +90,7 @@ function usage {
 	echo
 	echo "	-n	New name for file, default is the date + rate"
 	echo "	-r	Rate to speed up video, default is 24"
+	echo "	-m	Use mjpeg tools to conpress video"
 	echo "	-s	silent - do not include audio"
 	echo "	-y	Upload to Youtube"
 	echo "		Program will ask for name, description, user and password"
@@ -93,7 +107,7 @@ function usage {
 
 #  Program Starts here.
 #  Check parameters
-while getopts n:r:syh option
+while getopts n:r:msyh option
 do
 	case $option in
 	n)
@@ -101,6 +115,9 @@ do
 		;;		
 	r)
 		rate=$OPTARG
+		;;
+	m)
+		mjpeg=1
 		;;		
 	s)
 		Sound=0 	# Do not compress sound
@@ -172,7 +189,12 @@ while [ $i -lt $x ]
 do
 	date >>timex.log				# Time Stamp log file
 	echo " Working on "${fname[$i]}"." >>timex.log
-	vidCompress ${fname[$i]}		# rip & compress Video
+	if [ $mjpeg = "1" ]				# Compress Video
+	then
+		vidCompress ${fname[$i]}	# Used mjpeg tools	
+	else
+		videoRipCompress ${fname[$i]}	# Use ffmpeg
+	fi
 	if [ $Sound = "1" ]
 	then
 		audioCompress ${fname[$i]}	# rip & compress Audio
