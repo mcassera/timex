@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Timex by mcassera</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Timex</h1>
+        <p></p>
+
+        <p class="view"><a href="https://github.com/mcassera/timex">View the Project on GitHub <small>mcassera/timex</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/mcassera/timex/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/mcassera/timex/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/mcassera/timex">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>Speed up your GoPro Videos.</h3>
+
+<p>Use this BASH script to process your GoPro videos on the command line.  This script uses ffmpeg, mplayer, mjpegtools(optional), youtube-upload(optional):</p>
+
+<pre><code>Usage: timex -n [name] -r [rate] -m -s -y -h
+    -n  New name for file, default is the date + rate
+    -r  Rate to speed up video, default is 24
+    -m  Use mjpeg tools to compress video
+    -s  silent - do not include audio
+    -y  Upload to Youtube
+        Program will ask for name, description, user and password
+    -h  This help message
+
+    Tools needed to run this script:    
+            ffmpeg  (Video I/O)
+            mjpegtools  (Video Compression)
+            mplayer  (Audio Compression)
+            youtube-upload  (Command Line upload to Youtube)
+</code></pre>
+
+<h3>Required -vs- Optional</h3>
+
+<p>ffmpeg does the heavy lifting in this script.  mplayer is used to compress the audio.  The resulting file's quality improves and render time decreases if you add mjpegtools. youtube-upload is only needed if you want the script to automatically upload the final file up to youtube.</p>
+
+<h3>Moving Forward</h3>
+
+<p>I'm still working on ways to improve the quality of video compression using just ffmpeg.  I also plan to add jpg to video functionality to the script in the near future.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/mcassera">mcassera</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
