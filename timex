@@ -112,7 +112,7 @@ function usage {
 
 #  Program Starts here.
 #  Check parameters
-while getopts n:r:msyh option
+while getopts r:fsyh option
 do
 	case $option in
 	r)
