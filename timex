@@ -17,6 +17,7 @@
 #									mplayer
 #									mjpegtools [optional]
 #									youtube-upload [optional]
+#
 
 #Default Values
 ytUser=username					# YouTube Username
