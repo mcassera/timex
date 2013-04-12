@@ -24,17 +24,17 @@ read dt <<< "`date -I`"			# Get date in -I format for File Name
 rate="24"						# Video/Audio multiplier
 YT=0							# upload to YouTube	(no)
 Sound=1							# Compress sound default (yes)
-mjpeg=0							# Use mjpegtools (no)
+mjpeg=1							# Use mjpegtools (yes)
 
 # Functions to do the heavy lifting.  File is passed as ${1} to ffmpeg.
 # Fuction Rip video from file and compress
-function vidCompress()			# Use ffmpeg & mjpegtools to compress Video (Faster)
+function vidCompress()			# Use ffmpeg & mjpegtools to compress Video (Faster, better)
 {		
 	echo "   Ripping video & compressing." >>timex.log
 	ffmpeg -i ${1} -f yuv4mpegpipe - | yuvfps -s $fps:1 -r 30:1  | ffmpeg -f yuv4mpegpipe -i - -b 28800k -y fast.mp4
 }
 
-function videoRipCompress()		# Use ffmpeg to compress Video (Slower)
+function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality)
 {
 	mkdir tmp
 	echo "   Ripping video to frames in tmp." >>timex.log
@@ -86,11 +86,14 @@ function add2work()
 # Function for usage
 function usage {
 	echo
-	echo "Usage: timex -n [name] -r [rate] -s -y -h"
+	echo "Usage: timex [options] [path/]filename"
 	echo
-	echo "	-n	New name for file, default is the date + rate"
-	echo "	-r	Rate to speed up video, default is 24"
-	echo "	-m	Use mjpeg tools to conpress video"
+	echo "	filename - name of final video file"
+	echo "		default is date-rate.mp4"
+	echo 
+	echo "	Options"
+	echo "	-r[rate]	Rate to speed up video, default is 24"
+	echo "	-f	Do not use mjpeg tools to conpress video"
 	echo "	-s	silent - do not include audio"
 	echo "	-y	Upload to Youtube"
 	echo "		Program will ask for name, description, user and password"
@@ -110,13 +113,10 @@ function usage {
 while getopts n:r:msyh option
 do
 	case $option in
-	n)
-		dt=$OPTARG
-		;;		
 	r)
 		rate=$OPTARG
 		;;
-	m)
+	f)
 		mjpeg=1
 		;;		
 	s)
@@ -138,6 +138,7 @@ done
 #  Start Log File
 echo "timex log file" > timex.log
 echo >>timex.log
+ 
 
 #  Run a directory listing and store in an array.  The listing is sorted by modified date.
 echo "File List:" >>timex.log
@@ -177,7 +178,11 @@ fi
 
 
 #  Create name of final video name
-fn=$dt-$rate.mp4					
+fn=$1								# Pass name from command line
+if [ -z "$fn" ];					# if no filename was given
+then
+	fn=$dt-$rate.mp4				# set to default name
+fi				
 echo "Final Video name is: "$fn >>timex.log
 echo >>timex.log
 
@@ -211,7 +216,7 @@ done
 
 #  Finish up by turning work.mpg to mp4 with date & rate in name. Remove work file.	
 date >>timex.log
-echo "   Rendering final video to mpeg-4." >>timex.log
+echo "   Rendering final video" >>timex.log
 echo >>timex.log
 ffmpeg -i work.mpg -b 28800k $fn
 rm -fv work.mpg
