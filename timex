@@ -1,7 +1,8 @@
 #!/bin/bash 
-#
-# 4/9/2013 Added function to work without mjpegtools.
-# 4/7/2013 Michael Cassera
+
+# 4/12/2013 Made mjpegtools deafult, changed file name method
+# 4/9/2013  Added function to work without mjpegtools.
+# 4/7/2013  Michael Cassera
 
 # A BASH script to compress and combine GoPro video files for Time Lapse
 #
@@ -10,7 +11,7 @@
 #							Rate is 24x normal speed
 #							The Video is NOT uploaded to YouTube
 #	
-# Usage    timex [-nrsyh]	
+# Usage    timex [options] [path/]filename	
 #
 # Tools needed to run this script:	ffmpeg
 #									mplayer
