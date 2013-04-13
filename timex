@@ -1,5 +1,6 @@
 #!/bin/bash 
 
+# 4/13/2013 New method of using ffmpeg to compress video
 # 4/12/2013 Made mjpegtools deafult, changed file name method
 # 4/9/2013  Added function to work without mjpegtools.
 # 4/7/2013  Michael Cassera
@@ -11,7 +12,7 @@
 #							Rate is 24x normal speed
 #							The Video is NOT uploaded to YouTube
 #	
-# Usage    timex [options] [path/]filename	
+# Usage    timex [options]	
 #
 # Tools needed to run this script:	ffmpeg
 #									mplayer
@@ -25,8 +26,8 @@ ytPass=password					# YouTube Password
 read dt <<< "`date -I`"			# Get date in -I format for File Name
 rate="24"						# Video/Audio multiplier
 YT=0							# upload to YouTube	(no)
-Sound=1							# Compress sound default (yes)
-mjpeg=1							# Use mjpegtools (yes)
+Sound=0							# Compress sound default (no)
+mjpeg=0							# Use mjpegtools (no)
 
 # Functions to do the heavy lifting.  File is passed as ${1} to ffmpeg.
 # Fuction Rip video from file and compress
@@ -48,41 +49,14 @@ function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality
 	while read line					
 	do
 		n=$[$n+1]
-		nm="frame"
-		if [ $n -lt "10" ]	 	# add a "0" if less than 10
-		then
-			nm=$nm"0"
-		fi
-		if [ $n -lt "100" ]		# add a "0" if less than 100
-		then
-			nm=$nm"0"	
-		fi
-		if [ $n -lt "1000" ]	# add a "0" if less than 1000
-		then
-			nm=$nm"0"
-		fi
-		if [ $n -lt "10000" ]	# add a "0" if less than 10000
-		then
-			nm=$nm"0"
-		fi
-		if [ $n -lt "100000" ]	# add a "0" if less than 100000
-		then
-			nm=$nm"0"
-		fi
-		if [ $n -lt "1000000" ]	# add a "0" if less than 1000000
-		then
-			nm=$nm"0"
-		fi
-		nm=$nm$n".jpg"			# add the number $n + .jpg suffix to the filename
-		
 		keep=$[$n%$rate]		# is the remainder of frame/rate = 0
 		if [ $keep = "0" ]
 		then
-			echo "keep "$nm		# Keep the frame divisible by rate
+			echo -n "."		# Keep the frame divisible by rate
 		else
-			rm -f tmp/$nm		# Delete frames in between
+			rm -f $line		# Delete frames in between
 		fi
-	done <<< "`ls -1dtr tmp/*.jpg`"		# get all *.JPG files in mod order
+	done <<< "`ls -1dtr tmp/*.jpg`"		# get all *.jpg files in mod order from tmp dir
 	
 # Now renumber frames to be used by ffmpeg	
 	n="0"
@@ -116,7 +90,7 @@ function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality
 		fi
 		nm=$nm$n".jpg"			# add the number i + .jpg suffix to the filename
 		mv -v $line tmp/$nm			# rename the old file to the new file
-	done <<< "`ls -1dtr tmp/*.jpg`"		# get all *.jpg files in mod order
+	done <<< "`ls -1dtr tmp/*.jpg`"		# get all *.jpg files in mod order from tmp dir
 
 	echo "   Rebuilding mp4 from frames." >>timex.log
 	ffmpeg -f image2 -r 30 -i tmp/frame%7d.jpg -b 57600k -y fast.mp4
@@ -166,50 +140,47 @@ function add2work()
 function usage {
 	echo
 	echo "Usage: timex [options] "
-	echo
-	echo "	filename - name of final video file"
-	echo "		default is date-rate.mp4"
 	echo 
-	echo "	Options"
-	echo "	-r[rate]	Rate to speed up video, default is 24"
-	echo "	-f	Do not use mjpeg tools to conpress video"
-	echo "	-s	silent - do not include audio"
-	echo "	-y	Upload to Youtube"
-	echo "		Program will ask for name, description, user and password"
-	echo " 	-o 	output filename"
-	echo "	-h	This help message"
+	echo "  Options"
+	echo "	-r[rate] Rate to speed up video, default is 24"
+	echo "	-m       Use mjpeg tools to compress video (mjpegtools required)"
+	echo "	-a       Compress audio (mplayer required)"
+	echo "	-y       Upload to Youtube (youtube-upload required)"
+	echo "	           Program will ask for name, description, user and password"
+	echo " 	-o       output filename"
+	echo "	-h       This help message"
 	echo
 	echo "	Tools needed to run this script:"	
 	echo "			ffmpeg	(Video I/O)"
-	echo "			mjpegtools  (Video Compression)"
-	echo "			mplayer	 (Audio Compression)"
-	echo "			youtube-upload  (Command Line upload to Youtube)"
+	echo "			mjpegtools  [recommended](Video Compression)"
+	echo "			mplayer	 [optional](Audio Compression)"
+	echo "			youtube-upload  [optional](Command Line upload to Youtube)"
 	echo 
 }
 
 
 #  Program Starts here.
 #  Check parameters
-while getopts r:fsyho: option
+while getopts r:mayho: option
 do
 	case $option in
 	r)
-		rate=$OPTARG
+		rate=$OPTARG	# rate multiplyer
 		;;
-	f)
-		mjpeg=0
+	m)
+		mjpeg=1		# use mjpegtools
 		;;		
-	s)
-		Sound=0 	# Do not compress sound
+	a)
+		Sound=1 	# compress sound
 		;;			
 	y)
-		YT=1
+		YT=1		#upload to Youtube
 		;;		
 	h)
-		usage
+		usage		# help message
 		exit 0;;	
 	o)
-		fn=$OPTARG
+		fn=$OPTARG	# output filename
 		;;
 	*)				# Any other option is an error
 		usage
