@@ -219,6 +219,83 @@ then
 	read YTTitle					#The Title
 	echo -n 'Enter a short description of the Video> '
 	read YTDescription				#The Description
+	echo 'Select a Category for your Video:'
+	echo
+	echo '   a) Autos & Vehicals'
+	echo '   b) Comedy'
+	echo '   c) Education'
+	echo '   d) Film & Animation'
+	echo '   e) Gaming'
+	echo '   f) Howto & Style'
+	echo '   g) Music'
+	echo '   h) News & Politics'
+	echo '   i) Nonprofits & Activism'
+	echo '   j) People & Blogs'
+	echo '   k) Pets & Animals'
+	echo '   l) Science & Technology'
+	echo '   m) Sports'
+	echo '   n) Travel & Events'
+	echo
+	echo -n 'default is {m} Sports> '
+	read catChoose
+	YTCat="Sports"
+	if [ $catChoose = "a" ]
+	then
+		YTCat="Autos & Vehicals"
+	fi
+	if [ $catChoose = "b" ]
+	then
+		YTCat="Comedy"
+	fi
+	if [ $catChoose = "c" ]
+	then
+		YTCat="Education"
+	fi
+	if [ $catChoose = "d" ]
+	then
+		YTCat="Film & Animation"
+	fi
+	if [ $catChoose = "e" ]
+	then
+		YTCat="Gaming"
+	fi
+	if [ $catChoose = "f" ]
+	then
+		YTCat="Howto & Style"
+	fi
+	if [ $catChoose = "g" ]
+	then
+		YTCat="Music"
+	fi
+	if [ $catChoose = "h" ]
+	then
+		YTCat="News & Politics"
+	fi
+	if [ $catChoose = "i" ]
+	then
+		YTCat="Nonprofits & Activism"
+	fi
+	if [ $catChoose = "j" ]
+	then
+		YTCat="People & Blogs"
+	fi
+	if [ $catChoose = "k" ]
+	then
+		YTCat="Pets & Animals"
+	fi
+	if [ $catChoose = "l" ]
+	then
+		YTCat="Science & Technology"
+	fi
+	if [ $catChoose = "m" ]
+	then
+		YTCat="Sports"
+	fi
+	if [ $catChoose = "n" ]
+	then
+		YTCat="Travel & Events"
+	fi
+	echo $YTCat" selected."
 	echo "Will upload to YouTube with the title: "$YTTitle >>timex.log
 	echo >>timex.log
 	echo -n 'Enter YouTube username> '
@@ -281,7 +358,7 @@ then
 	date >>timex.log
 	echo "   Uploading "$YTTitle" to YouTube" >>timex.log
 	echo >>timex.log
-	youtube-upload --email $ytUser --password=$ytPass --title="$YTTitle" --description="$YTDescription" --category="Sports" $fn 
+	youtube-upload --email $ytUser --password=$ytPass --title="$YTTitle" --description="$YTDescription" --category="$YTCat" $fn 
 fi
 
 #  We are done!
