@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+# 8/5/2013  changes with new ubuntu - compiled ffmpeg instead of binary
+#			changed to sox instead of mplayer.
 # 4/13/2013 New method of using ffmpeg to compress video
 # 4/12/2013 Made mjpegtools deafult, changed file name method
 # 4/9/2013  Added function to work without mjpegtools.
@@ -15,7 +17,7 @@
 # Usage    timex [options]	
 #
 # Tools needed to run this script:	ffmpeg
-#									mplayer
+#									sox
 #									mjpegtools [optional]
 #									youtube-upload [optional]
 #
@@ -34,7 +36,7 @@ mjpeg=0							# Use mjpegtools (no)
 function vidCompress()			# Use ffmpeg & mjpegtools to compress Video (Faster, better)
 {		
 	echo "   Ripping video & compressing." >>timex.log
-	ffmpeg -i ${1} -f yuv4mpegpipe - | yuvfps -s $fps:1 -r 30:1  | ffmpeg -f yuv4mpegpipe -i - -b 28800k -y fast.mp4
+	ffmpeg -i ${1} -f yuv4mpegpipe - | yuvfps -s $fps:1 -r 30:1  | ffmpeg -f yuv4mpegpipe -i - -b:v 16384k -y fast.mp4
 }
 
 function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality)
@@ -93,7 +95,7 @@ function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality
 	done <<< "`ls -1dtr tmp/*.jpg`"		# get all *.jpg files in mod order from tmp dir
 
 	echo "   Rebuilding mp4 from frames." >>timex.log
-	ffmpeg -f image2 -r 30 -i tmp/frame%7d.jpg -b 57600k -y fast.mp4
+	ffmpeg -f image2 -r 30 -i tmp/frame%7d.jpg -b:v 16384k -y fast.mp4
 	echo "   Clearing tmp directory." >>timex.log
 	rm -rfv tmp
 }
@@ -102,10 +104,9 @@ function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality
 function audioCompress()
 {
 	echo "   Ripping audio & compressing." >>timex.log
-	ffmpeg -i ${1} -vn -ac 2 -ar 44100 -ab 128k -f mp3 sound.mp3
-	mplayer -af scaletempo -speed $rate sound.mp3 -vc null -vo null -ao pcm:fast:waveheader:file=sound.wav
-	rm -fv sound.mp3
-	ffmpeg -i sound.wav -acodec libmp3lame -ab 128k sound.mp3
+	ffmpeg -i ${1} -vn -ac 2 -ar 44100 -ab 128k -f wav sound.wav
+	sox sound.wav output.wav speed $rate
+	#mplayer -af scaletempo -speed $rate sound.wav -vc null -vo null -ao pcm:fast:waveheader:file=output.wav
 	rm -fv sound.wav
 }
 
@@ -113,8 +114,9 @@ function audioCompress()
 function audio2video()
 {
 	echo "   Re-attaching audio to video." >>timex.log
-	ffmpeg -i fast.mp4 -i sound.mp3 -shortest -vcodec copy -acodec copy fastA.mp4
-	rm -fv sound.mp3
+	fnme="fastA"${1}".mp4"
+	ffmpeg -i fast.mp4 -i output.wav $fnme
+	rm -fv output.wav
 	rm -fv fast.mp4
 }
 
@@ -122,7 +124,7 @@ function audio2video()
 function render2mpg()
 {
 	echo "   Rendering to mpeg." >>timex.log
-	ffmpeg -i fastA.mp4 -b 28800k temp.mpg
+	ffmpeg -i fastA.mp4 -b:v 16384k temp.mpg
 	rm -fv fastA.mp4
 }
 
@@ -153,7 +155,7 @@ function usage {
 	echo "	Tools needed to run this script:"	
 	echo "			ffmpeg	(Video I/O)"
 	echo "			mjpegtools  [recommended](Video Compression)"
-	echo "			mplayer	 [optional](Audio Compression)"
+	echo "			sox	 [optional](Audio Compression)"
 	echo "			youtube-upload  [optional](Command Line upload to Youtube)"
 	echo 
 }
@@ -333,23 +335,33 @@ do
 	if [ $Sound = "1" ]
 	then
 		audioCompress ${fname[$i]}	# rip & compress Audio
-		audio2video					# combine audio to video
+		audio2video	$[$i]				# combine audio to video
 	else
-		mv fast.mp4 fastA.mp4		# skip audio compression, just rename
+		mv fast.mp4 fastA$[$i].mp4		# skip audio compression, just rename
 	fi
-	render2mpg						# render to mpg
-	add2work						# append to work.mpg
+	#render2mpg						# render to mpg
+	#add2work						# append to work.mpg
 	i=$[$i+1]						# next file
 	echo >>timex.log
 done	
 
 
-#  Finish up by turning work.mpg to mp4 with date & rate in name. Remove work file.	
+#  Finish up by concatenate files with date & rate in name. Remove work file.	
 date >>timex.log
-echo "   Rendering final video" >>timex.log
+echo "   Joining all files together" >>timex.log
 echo >>timex.log
-ffmpeg -i work.mpg -b 28800k $fn
-rm -fv work.mpg
+#  Put the files together using concat
+while read line					
+	do
+		echo "file '"$line"'" >>filelist.txt
+	done <<< "`ls -1dtr fastA*.mp4`"		# get all fastAx.mp4 files
+ffmpeg -f concat -i filelist.txt -c copy $fn
+# remove all work files
+while read line					
+	do
+		rm -fv $line
+	done <<< "`ls -1dtr fastA*.mp4`"		# get all fastAx.mp4 files
+rm -fv filelist.txt
 
 
 #  Upload to YouTube if YT = 1
