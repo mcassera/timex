@@ -1,5 +1,6 @@
 #!/bin/bash 
 
+# 10/30/2013 changed how to join 
 # 8/5/2013  changes with new ubuntu - compiled ffmpeg instead of binary
 #			changed to sox instead of mplayer.
 # 4/13/2013 New method of using ffmpeg to compress video
@@ -59,7 +60,6 @@ function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality
 			rm -f $line		# Delete frames in between
 		fi
 	done <<< "`ls -1dtr tmp/*.jpg`"		# get all *.jpg files in mod order from tmp dir
-	
 # Now renumber frames to be used by ffmpeg	
 	n="0"
 	while read line			
@@ -118,24 +118,6 @@ function audio2video()
 	ffmpeg -i fast.mp4 -i output.wav $fnme
 	rm -fv output.wav
 	rm -fv fast.mp4
-}
-
-# Function rerender to mpeg to append to working file
-function render2mpg()
-{
-	echo "   Rendering to mpeg." >>timex.log
-	ffmpeg -i fastA.mp4 -b:v 16384k temp.mpg
-	rm -fv fastA.mp4
-}
-
-# Function Append new compressed file to working file
-function add2work()
-{
-	echo "   Adding to work.mpg." >>timex.log
-	cat work.mpg temp.mpg > temp2.mpg
-	rm -fv work.mpg
-	rm -fv temp.mpg
-	mv temp2.mpg work.mpg
 }
 
 # Function for usage
@@ -339,8 +321,6 @@ do
 	else
 		mv fast.mp4 fastA$[$i].mp4		# skip audio compression, just rename
 	fi
-	#render2mpg						# render to mpg
-	#add2work						# append to work.mpg
 	i=$[$i+1]						# next file
 	echo >>timex.log
 done	
@@ -376,5 +356,3 @@ fi
 #  We are done!
 date >>timex.log
 echo "   Done!" >>timex.log
-
-
