@@ -135,9 +135,9 @@ function fadeOut {
 	mv -fv $fnme tempwork.mp4
 	lfOUT=`ffmpeg -i tempwork.mp4 -vcodec copy -acodec copy -f null /dev/null 2>&1 | grep 'frame='`
 	LF=`expr index "$lfOUT" p`
-	ldgt=$[$LF-90]
+	ldgt=$[$LF-9]
 	fms=${lfOUT:6:$[$ldgt]}
-	fos=$[$fms-]
+	fos=$[$fms-90]
 	ffmpeg -i tempwork.mp4 -vf "fade=out:$fos:90" $fnme
 	rm -fv tempwork.mp4
 }
