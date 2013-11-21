@@ -124,7 +124,7 @@ function audio2video()
 function fadeIN {
 	echo "   Adding fade in." >>timex.log
 	mv -fv workingfile0.mp4 tempwork.mp4
-	ffmpeg -i tempwork.mp4 -vf "fade=in:0:120" workingfile0.mp4
+	ffmpeg -i tempwork.mp4 -vf "fade=in:0:30" workingfile0.mp4
 	rm -fv tempwork.mp4
 }
 
@@ -137,8 +137,8 @@ function fadeOut {
 	LF=`expr index "$lfOUT" p`
 	ldgt=$[$LF-9]
 	fms=${lfOUT:6:$[$ldgt]}
-	fos=$[$fms-90]
-	ffmpeg -i tempwork.mp4 -vf "fade=out:$fos:90" $fnme
+	fos=$[$fms-30]
+	ffmpeg -i tempwork.mp4 -vf "fade=out:$fos:30" $fnme
 	rm -fv tempwork.mp4
 }
 
@@ -218,12 +218,12 @@ echo >>timex.log
 fps=$[$rate*30]
 echo "Rate is "$rate"X, "$fps" frame/sec."
 echo "Rate is "$rate"X, "$fps" frame/sec." >>timex.log
-if [ $[$rate] > 70 ]
-then
-	mjpeg=0
-	echo "Rate too fast for mjpeg tools, using default" 
-	echo "Rate too fast for mjpeg tools, using default"  >>timex.log
-fi
+#if [ $[$rate*1] > 70 ]
+#then
+#	mjpeg=0
+#	echo "Rate too fast for mjpeg tools, using default" 
+#	echo "Rate too fast for mjpeg tools, using default"  >>timex.log
+#fi
 echo
 
 #  Get Youtube info if uploading to Youtube
