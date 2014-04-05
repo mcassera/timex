@@ -1,5 +1,6 @@
 #!/bin/bash 
 
+# 11/20/2013 Added a fade in and out routine
 # 10/30/2013 changed how to join 
 # 8/5/2013  changes with new ubuntu - compiled ffmpeg instead of binary
 #			changed to sox instead of mplayer.
@@ -44,7 +45,7 @@ function videoRipCompress()		# Use ffmpeg to compress Video (Slower Less Quality
 {
 	mkdir tmp					# Make temp directory to store frames
 	echo "   Ripping video to frames in tmp." >>timex.log
-	ffmpeg -i ${1} -f image2 tmp/frame%7d.jpg	# extract frames from video
+	ffmpeg -r 30 -i ${1} -f image2 -qscale:v 2 -r 30 tmp/frame%7d.jpg	# extract frames from video
 
 # Count frames and delete unused frames
 	n="0"
@@ -218,13 +219,14 @@ echo >>timex.log
 fps=$[$rate*30]
 echo "Rate is "$rate"X, "$fps" frame/sec."
 echo "Rate is "$rate"X, "$fps" frame/sec." >>timex.log
-#if [ $[$rate*1] > 70 ]
+
+#if [ $[$rate] > 70 ]
 #then
 #	mjpeg=0
 #	echo "Rate too fast for mjpeg tools, using default" 
 #	echo "Rate too fast for mjpeg tools, using default"  >>timex.log
 #fi
-echo
+#echo
 
 #  Get Youtube info if uploading to Youtube
 if [ $YT = "1" ]
